@@ -1,0 +1,36 @@
+name: Deploy toolbox to GitHub Pages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Prepare and validate static site
+        run: |
+          test -f toolbox-pages-upload.zip
+          mkdir site
+          unzip -q toolbox-pages-upload.zip -d site
+          test -s site/index.html
+          test "$(cat site/CNAME)" = "toolbox.zhiwenbrief.asia"
+          test -s site/vendor/core/ffmpeg-core.wasm
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
